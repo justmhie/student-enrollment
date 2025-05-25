@@ -2,14 +2,14 @@ package com.orangeandbronze;
 
 import java.util.Objects;
 
-public class Schedule {
-    public enum Days {
+class Schedule {
+    enum Days {
         MTH, // Mon/Thu
-        TF,  // Tue/Fri
-        WS   // Wed/Sat
+        TF, // Tue/Fri
+        WS // Wed/Sat
     }
 
-    public enum Period {
+    enum Period {
         H0830_1000("8:30am-10am"),
         H1000_1130("10am-11:30am"),
         H1130_1300("11:30am-1pm"),
@@ -23,29 +23,38 @@ public class Schedule {
             this.timeRange = timeRange;
         }
 
-        public String getTimeRange() { return timeRange; }
+        String getTimeRange() {
+            return timeRange;
+        }
     }
 
     private final Days days;
     private final Period period;
 
-    public Schedule(Days days, Period period) {
+    Schedule(Days days, Period period) {
         this.days = Objects.requireNonNull(days);
         this.period = Objects.requireNonNull(period);
     }
 
-    public boolean conflictsWith(Schedule other) {
+    boolean conflictsWith(Schedule other) {
         return this.days == other.days && this.period == other.period;
     }
 
     // Getters
-    public Days getDays() { return days; }
-    public Period getPeriod() { return period; }
+    Days getDays() {
+        return days;
+    }
+
+    Period getPeriod() {
+        return period;
+    }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
         Schedule schedule = (Schedule) obj;
         return days == schedule.days && period == schedule.period;
     }

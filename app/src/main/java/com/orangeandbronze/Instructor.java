@@ -2,31 +2,38 @@ package com.orangeandbronze;
 
 import java.util.*;
 
-public class Instructor {
+class Instructor {
     private final String name;
     private final Set<Section> assignedSections;
 
-    public Instructor(String name) {
+    Instructor(String name) {
         this.name = Objects.requireNonNull(name);
         this.assignedSections = new HashSet<>();
     }
 
-    public void assignSection(Section section) {
+    void assignSection(Section section) {
         assignedSections.add(section);
     }
 
-    public void removeSection(Section section) {
+    void removeSection(Section section) {
         assignedSections.remove(section);
     }
 
     // Getters
-    public String getName() { return name; }
-    public Set<Section> getAssignedSections() { return new HashSet<>(assignedSections); }
+    String getName() {
+        return name;
+    }
+
+    Set<Section> getAssignedSections() {
+        return new HashSet<>(assignedSections);
+    }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
         Instructor instructor = (Instructor) obj;
         return Objects.equals(name, instructor.name);
     }

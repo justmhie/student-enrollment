@@ -3,7 +3,7 @@ package com.orangeandbronze;
 import java.util.*;
 import com.orangeandbronze.exceptions.*;
 
-public class Section {
+class Section {
     private final String sectionId;
     private final Subject subject;
     private final Schedule schedule;
@@ -11,7 +11,8 @@ public class Section {
     private final Instructor instructor;
     private final Set<Student> enrolledStudents;
 
-    public Section(String sectionId, Subject subject, Schedule schedule, Room room, Instructor instructor) throws ScheduleConflictException {
+    Section(String sectionId, Subject subject, Schedule schedule, Room room, Instructor instructor)
+            throws ScheduleConflictException {
         if (!ValidationUtils.isAlphanumeric(sectionId)) {
             throw new IllegalArgumentException("Section ID must be alphanumeric");
         }
@@ -21,7 +22,7 @@ public class Section {
         this.room = Objects.requireNonNull(room);
         this.instructor = Objects.requireNonNull(instructor);
         this.enrolledStudents = new HashSet<>();
-        
+
         validateRoomScheduleConflict();
         validateInstructorScheduleConflict();
     }
@@ -29,8 +30,8 @@ public class Section {
     private void validateRoomScheduleConflict() throws ScheduleConflictException {
         for (Section section : room.getAssignedSections()) {
             if (section != this && section.hasScheduleConflict(this)) {
-                throw new ScheduleConflictException("Room " + room.getRoomName() + 
-                    " has schedule conflict between sections");
+                throw new ScheduleConflictException("Room " + room.getRoomName() +
+                        " has schedule conflict between sections");
             }
         }
     }
@@ -38,17 +39,17 @@ public class Section {
     private void validateInstructorScheduleConflict() throws ScheduleConflictException {
         for (Section section : instructor.getAssignedSections()) {
             if (section != this && section.hasScheduleConflict(this)) {
-                throw new ScheduleConflictException("Instructor " + instructor.getName() + 
-                    " has schedule conflict between sections");
+                throw new ScheduleConflictException("Instructor " + instructor.getName() +
+                        " has schedule conflict between sections");
             }
         }
     }
 
-    public boolean hasScheduleConflict(Section other) {
+    boolean hasScheduleConflict(Section other) {
         return this.schedule.conflictsWith(other.schedule);
     }
 
-    public boolean isAtCapacity() {
+    boolean isAtCapacity() {
         return enrolledStudents.size() >= room.getCapacity();
     }
 
@@ -64,18 +65,40 @@ public class Section {
     }
 
     // Getters
-    public String getSectionId() { return sectionId; }
-    public Subject getSubject() { return subject; }
-    public Schedule getSchedule() { return schedule; }
-    public Room getRoom() { return room; }
-    public Instructor getInstructor() { return instructor; }
-    public Set<Student> getEnrolledStudents() { return new HashSet<>(enrolledStudents); }
-    public int getEnrollmentCount() { return enrolledStudents.size(); }
+    String getSectionId() {
+        return sectionId;
+    }
+
+    Subject getSubject() {
+        return subject;
+    }
+
+    Schedule getSchedule() {
+        return schedule;
+    }
+
+    Room getRoom() {
+        return room;
+    }
+
+    Instructor getInstructor() {
+        return instructor;
+    }
+
+    Set<Student> getEnrolledStudents() {
+        return new HashSet<>(enrolledStudents);
+    }
+
+    int getEnrollmentCount() {
+        return enrolledStudents.size();
+    }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
         Section section = (Section) obj;
         return Objects.equals(sectionId, section.sectionId);
     }

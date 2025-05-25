@@ -6,12 +6,12 @@ import java.util.*;
 
 import com.orangeandbronze.exceptions.*;
 
-public class Student {
+ class Student {
     private final int studentNumber;
     private final Set<Section> enrolledSections;
     private final Set<Subject> completedSubjects;
 
-    public Student(int studentNumber) {
+     Student(int studentNumber) {
         if (studentNumber < 0) {
             throw new IllegalArgumentException("Student number must be non-negative");
         }
@@ -20,7 +20,7 @@ public class Student {
         this.completedSubjects = new HashSet<>();
     }
 
-    public void enlist(Section section) throws EnlistmentException {
+     void enlist(Section section) throws EnlistmentException {
         validateEnlistment(section);
         enrolledSections.add(section);
         section.addStudent(this);
@@ -63,7 +63,7 @@ public class Student {
         }
     }
 
-    public void cancel(Section section) throws EnlistmentException {
+     void cancel(Section section) throws EnlistmentException {
         if (!enrolledSections.contains(section)) {
             throw new EnlistmentException("Student not enrolled in section " + section.getSectionId());
         }
@@ -71,7 +71,7 @@ public class Student {
         section.removeStudent(this);
     }
 
-    public BigDecimal requestAssessment() {
+     BigDecimal requestAssessment() {
         BigDecimal totalAmount = BigDecimal.ZERO;
         int totalUnits = 0;
         int labSubjectCount = 0;
@@ -103,20 +103,20 @@ public class Student {
         return totalAmount.setScale(2, RoundingMode.HALF_UP); // <-- ROUND FINAL TOTAL
     }
 
-    public void completeSubject(Subject subject) {
+     void completeSubject(Subject subject) {
         completedSubjects.add(subject);
     }
 
     // Getters
-    public int getStudentNumber() {
+     int getStudentNumber() {
         return studentNumber;
     }
 
-    public Set<Section> getEnrolledSections() {
+     Set<Section> getEnrolledSections() {
         return new HashSet<>(enrolledSections);
     }
 
-    public Set<Subject> getCompletedSubjects() {
+     Set<Subject> getCompletedSubjects() {
         return new HashSet<>(completedSubjects);
     }
 
