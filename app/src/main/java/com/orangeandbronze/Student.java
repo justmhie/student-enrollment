@@ -1,13 +1,10 @@
 package com.orangeandbronze;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
-import com.orangeandbronze.exceptions.CapacityReachedException;
-import com.orangeandbronze.exceptions.EnlistmentException;
-import com.orangeandbronze.exceptions.PrerequisiteNotMetException;
-import com.orangeandbronze.exceptions.SameSubjectEnrollmentException;
-import com.orangeandbronze.exceptions.ScheduleConflictException;
+import com.orangeandbronze.exceptions.*;
 
 public class Student {
     private final int studentNumber;
@@ -38,16 +35,16 @@ public class Student {
         // Check for schedule conflicts
         for (Section enrolledSection : enrolledSections) {
             if (enrolledSection.hasScheduleConflict(section)) {
-                throw new ScheduleConflictException("Schedule conflict between sections " + 
-                    enrolledSection.getSectionId() + " and " + section.getSectionId());
+                throw new ScheduleConflictException("Schedule conflict between sections " +
+                        enrolledSection.getSectionId() + " and " + section.getSectionId());
             }
         }
 
         // Check for same subject enrollment
         for (Section enrolledSection : enrolledSections) {
             if (enrolledSection.getSubject().equals(section.getSubject())) {
-                throw new SameSubjectEnrollmentException("Student already enrolled in subject " + 
-                    section.getSubject().getSubjectId());
+                throw new SameSubjectEnrollmentException("Student already enrolled in subject " +
+                        section.getSubject().getSubjectId());
             }
         }
 
@@ -55,8 +52,8 @@ public class Student {
         Subject subject = section.getSubject();
         for (Subject prerequisite : subject.getPrerequisites()) {
             if (!completedSubjects.contains(prerequisite)) {
-                throw new PrerequisiteNotMetException("Prerequisite " + prerequisite.getSubjectId() + 
-                    " not completed for subject " + subject.getSubjectId());
+                throw new PrerequisiteNotMetException("Prerequisite " + prerequisite.getSubjectId() +
+                        " not completed for subject " + subject.getSubjectId());
             }
         }
 
@@ -87,23 +84,23 @@ public class Student {
             }
         }
 
-        // Calculate base fee
         BigDecimal unitFee = new BigDecimal("2345.67");
-        totalAmount = totalAmount.add(unitFee.multiply(new BigDecimal(totalUnits)));
-
-        // Add laboratory fees
         BigDecimal labFee = new BigDecimal("1234.56");
-        totalAmount = totalAmount.add(labFee.multiply(new BigDecimal(labSubjectCount)));
-
-        // Add miscellaneous fees
         BigDecimal miscFee = new BigDecimal("3456.78");
-        totalAmount = totalAmount.add(miscFee);
 
-        // Add VAT (12%)
+        // Calculate base
+        totalAmount = totalAmount
+                .add(unitFee.multiply(new BigDecimal(totalUnits)))
+                .add(labFee.multiply(new BigDecimal(labSubjectCount)))
+                .add(miscFee);
+
+        // Calculate VAT
         BigDecimal vat = totalAmount.multiply(new BigDecimal("0.12"));
+        vat = vat.setScale(2, RoundingMode.HALF_UP); // <-- ROUND IT!
+
         totalAmount = totalAmount.add(vat);
 
-        return totalAmount;
+        return totalAmount.setScale(2, RoundingMode.HALF_UP); // <-- ROUND FINAL TOTAL
     }
 
     public void completeSubject(Subject subject) {
@@ -111,14 +108,24 @@ public class Student {
     }
 
     // Getters
-    public int getStudentNumber() { return studentNumber; }
-    public Set<Section> getEnrolledSections() { return new HashSet<>(enrolledSections); }
-    public Set<Subject> getCompletedSubjects() { return new HashSet<>(completedSubjects); }
+    public int getStudentNumber() {
+        return studentNumber;
+    }
+
+    public Set<Section> getEnrolledSections() {
+        return new HashSet<>(enrolledSections);
+    }
+
+    public Set<Subject> getCompletedSubjects() {
+        return new HashSet<>(completedSubjects);
+    }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
         Student student = (Student) obj;
         return studentNumber == student.studentNumber;
     }
