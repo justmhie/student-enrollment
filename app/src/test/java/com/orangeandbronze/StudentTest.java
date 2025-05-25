@@ -3,156 +3,192 @@ package com.orangeandbronze;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+import java.math.BigDecimal;
+import com.orangeandbronze.exceptions.*;
 
-public class StudentTest {
-    
+class StudentTest {
     private Student student;
-    private Section section1;
-    private Section section2;
-    private Section conflictingSection;
-    private Section fullSection;
-    
+    private Subject mathSubject;
+    private Subject physicsSubject;
+    private Subject labSubject;
+    private Room room;
+    private Instructor instructor;
+    private Schedule schedule1;
+    private Schedule schedule2;
+
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         student = new Student(12345);
-        
-        Schedule schedule1 = new Schedule("Mon/Thu", "8:30am-10am");
-        Schedule schedule2 = new Schedule("Tue/Fri", "10am-11:30am");
-        Schedule conflictingSchedule = new Schedule("Mon/Thu", "8:30am-10am");
-        
-        Room room1 = new Room("A101", 30);
-        Room room2 = new Room("A102", 25);
-        Room smallRoom = new Room("A103", 1);
-        
-        section1 = new Section("MATH101", schedule1, room1);
-        section2 = new Section("PHYS101", schedule2, room2);
-        conflictingSection = new Section("CHEM101", conflictingSchedule, room2);
-        fullSection = new Section("CS101", schedule2, smallRoom);
-        
-        // Fill up the full section
-        Student otherStudent = new Student(99999);
-        otherStudent.enlist(fullSection);
+        mathSubject = new Subject("MATH101", 3, false);
+        physicsSubject = new Subject("PHYS101", 4, false);
+        labSubject = new Subject("CHEM101L", 1, true);
+        room = new Room("A101", 30);
+        instructor = new Instructor("Dr. Smith");
+        schedule1 = new Schedule(Schedule.Days.MTH, Schedule.Period.H0830_1000);
+        schedule2 = new Schedule(Schedule.Days.TF, Schedule.Period.H1000_1130);
     }
-    
+
     @Test
-    public void testValidStudentCreation() {
+    void testStudentCreation() {
         assertEquals(12345, student.getStudentNumber());
-        assertEquals(0, student.getEnrolledSectionCount());
         assertTrue(student.getEnrolledSections().isEmpty());
+        assertTrue(student.getCompletedSubjects().isEmpty());
     }
-    
+
     @Test
-    public void testNegativeStudentNumberThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new Student(-1);
-        });
+    void testInvalidStudentNumber() {
+        assertThrows(IllegalArgumentException.class, () -> new Student(-1));
     }
-    
+
     @Test
-    public void testZeroStudentNumberIsValid() {
-        Student zeroStudent = new Student(0);
-        assertEquals(0, zeroStudent.getStudentNumber());
+    void testSuccessfulEnlistment() throws EnlistmentException {
+        Section section = new Section("SEC001", mathSubject, schedule1, room, instructor);
+        room.assignSection(section);
+        instructor.assignSection(section);
+        
+        student.enlist(section);
+        
+        assertTrue(student.getEnrolledSections().contains(section));
+        assertEquals(1, student.getEnrolledSections().size());
     }
-    
+
     @Test
-    public void testSuccessfulEnlistment() {
+    void testDuplicateEnlistment() throws EnlistmentException {
+        Section section = new Section("SEC001", mathSubject, schedule1, room, instructor);
+        room.assignSection(section);
+        instructor.assignSection(section);
+        
+        student.enlist(section);
+        
+        assertThrows(EnlistmentException.class, () -> student.enlist(section));
+    }
+
+    @Test
+    void testScheduleConflict() throws EnlistmentException {
+        Section section1 = new Section("SEC001", mathSubject, schedule1, room, instructor);
+        Section section2 = new Section("SEC002", physicsSubject, schedule1, new Room("B101", 25), new Instructor("Dr. Jones"));
+        
+        room.assignSection(section1);
+        instructor.assignSection(section1);
+        
         student.enlist(section1);
         
-        assertTrue(student.isEnrolledIn(section1));
-        assertEquals(1, student.getEnrolledSectionCount());
-        assertTrue(student.getEnrolledSections().contains(section1));
-        assertTrue(section1.isStudentEnrolled(student));
+        assertThrows(ScheduleConflictException.class, () -> student.enlist(section2));
     }
-    
+
     @Test
-    public void testMultipleEnlistments() {
-        student.enlist(section1);
-        student.enlist(section2);
+    void testSameSubjectEnrollment() throws EnlistmentException {
+        Section section1 = new Section("SEC001", mathSubject, schedule1, room, instructor);
+        Section section2 = new Section("SEC002", mathSubject, schedule2, new Room("B101", 25), new Instructor("Dr. Jones"));
         
-        assertTrue(student.isEnrolledIn(section1));
-        assertTrue(student.isEnrolledIn(section2));
-        assertEquals(2, student.getEnrolledSectionCount());
-    }
-    
-    @Test
-    public void testDuplicateEnlistmentThrowsException() {
+        room.assignSection(section1);
+        instructor.assignSection(section1);
+        
         student.enlist(section1);
         
-        assertThrows(IllegalStateException.class, () -> {
-            student.enlist(section1);
-        });
+        assertThrows(SameSubjectEnrollmentException.class, () -> student.enlist(section2));
     }
-    
+
     @Test
-    public void testScheduleConflictPreventsEnlistment() {
-        student.enlist(section1);
+    void testPrerequisiteNotMet() throws ScheduleConflictException {
+        Subject advancedMath = new Subject("MATH201", 3, false);
+        advancedMath.addPrerequisite(mathSubject);
         
-        assertThrows(IllegalStateException.class, () -> {
-            student.enlist(conflictingSection);
-        });
-    }
-    
-    @Test
-    public void testCapacityLimitPreventsEnlistment() {
-        assertThrows(IllegalStateException.class, () -> {
-            student.enlist(fullSection);
-        });
-    }
-    
-    @Test
-    public void testNullSectionEnlistmentThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            student.enlist(null);
-        });
-    }
-    
-    @Test
-    public void testSuccessfulCancellation() {
-        student.enlist(section1);
-        student.enlist(section2);
+        Section section = new Section("SEC001", advancedMath, schedule1, room, instructor);
+        room.assignSection(section);
+        instructor.assignSection(section);
         
-        student.cancel(section1);
-        
-        assertFalse(student.isEnrolledIn(section1));
-        assertTrue(student.isEnrolledIn(section2));
-        assertEquals(1, student.getEnrolledSectionCount());
-        assertFalse(section1.isStudentEnrolled(student));
+        assertThrows(PrerequisiteNotMetException.class, () -> student.enlist(section));
     }
-    
+
     @Test
-    public void testCancellingNonEnrolledSectionThrowsException() {
-        assertThrows(IllegalStateException.class, () -> {
-            student.cancel(section1);
-        });
-    }
-    
-    @Test
-    public void testNullSectionCancellationThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            student.cancel(null);
-        });
-    }
-    
-    @Test
-    public void testStudentEquality() {
-        Student student1 = new Student(12345);
-        Student student2 = new Student(12345);
-        Student student3 = new Student(54321);
+    void testPrerequisiteMet() throws EnlistmentException {
+        Subject advancedMath = new Subject("MATH201", 3, false);
+        advancedMath.addPrerequisite(mathSubject);
         
-        assertEquals(student1, student2);
-        assertNotEquals(student1, student3);
+        student.completeSubject(mathSubject);
+        
+        Section section = new Section("SEC001", advancedMath, schedule1, room, instructor);
+        room.assignSection(section);
+        instructor.assignSection(section);
+        
+        student.enlist(section);
+        
+        assertTrue(student.getEnrolledSections().contains(section));
     }
-    
+
     @Test
-    public void testEnlistmentAfterCancellation() {
-        student.enlist(section1);
-        student.cancel(section1);
+    void testCapacityReached() throws EnlistmentException {
+        Room smallRoom = new Room("SMALL1", 1);
+        Section section = new Section("SEC001", mathSubject, schedule1, smallRoom, instructor);
+        smallRoom.assignSection(section);
+        instructor.assignSection(section);
         
-        // Should be able to enlist again after cancellation
-        assertDoesNotThrow(() -> {
-            student.enlist(section1);
-        });
+        Student student2 = new Student(67890);
+        student.enlist(section);
         
-        assertTrue(student.isEnrolledIn(section1));
+        assertThrows(CapacityReachedException.class, () -> student2.enlist(section));
+    }
+
+    @Test
+    void testCancelEnlistment() throws EnlistmentException {
+        Section section = new Section("SEC001", mathSubject, schedule1, room, instructor);
+        room.assignSection(section);
+        instructor.assignSection(section);
+        
+        student.enlist(section);
+        assertTrue(student.getEnrolledSections().contains(section));
+        
+        student.cancel(section);
+        assertFalse(student.getEnrolledSections().contains(section));
+    }
+
+    @Test
+    void testCancelNonEnlistedSection() throws ScheduleConflictException {
+        Section section = new Section("SEC001", mathSubject, schedule1, room, instructor);
+        room.assignSection(section);
+        instructor.assignSection(section);
+        
+        assertThrows(EnlistmentException.class, () -> student.cancel(section));
+    }
+
+    @Test
+    void testAssessmentCalculation() throws EnlistmentException {
+        // Create sections with different subjects
+        Section mathSection = new Section("SEC001", mathSubject, schedule1, room, instructor);
+        Section labSection = new Section("SEC002", labSubject, schedule2, new Room("LAB1", 20), new Instructor("Dr. Lab"));
+        
+        room.assignSection(mathSection);
+        instructor.assignSection(mathSection);
+        
+        student.enlist(mathSection);
+        student.enlist(labSection);
+        
+        BigDecimal assessment = student.requestAssessment();
+        
+        // Expected calculation:
+        // Units: 3 (math) + 1 (lab) = 4 units
+        // Unit fee: 4 * 2345.67 = 9382.68
+        // Lab fee: 1 * 1234.56 = 1234.56
+        // Misc fee: 3456.78
+        // Subtotal: 9382.68 + 1234.56 + 3456.78 = 14074.02
+        // VAT (12%): 14074.02 * 0.12 = 1688.88
+        // Total: 14074.02 + 1688.88 = 15762.90
+        
+        BigDecimal expected = new BigDecimal("15762.90");
+        assertEquals(0, expected.compareTo(assessment));
+    }
+
+    @Test
+    void testAssessmentWithNoEnrollment() {
+        BigDecimal assessment = student.requestAssessment();
+        
+        // Only misc fee + VAT
+        // Misc fee: 3456.78
+        // VAT: 3456.78 * 0.12 = 414.81
+        // Total: 3456.78 + 414.81 = 3871.59
+        
+        BigDecimal expected = new BigDecimal("3871.59");
+        assertEquals(0, expected.compareTo(assessment));
     }
 }

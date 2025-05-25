@@ -1,80 +1,87 @@
 package com.orangeandbronze;
 
 import java.util.*;
+import com.orangeandbronze.exceptions.*;
 
 public class Section {
     private final String sectionId;
+    private final Subject subject;
     private final Schedule schedule;
     private final Room room;
+    private final Instructor instructor;
     private final Set<Student> enrolledStudents;
-    
-    public Section(String sectionId, Schedule schedule, Room room) {
-        if (sectionId == null || sectionId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Section ID cannot be null or empty");
-        }
-        if (schedule == null) {
-            throw new IllegalArgumentException("Schedule cannot be null");
-        }
-        if (room == null) {
-            throw new IllegalArgumentException("Room cannot be null");
+
+    public Section(String sectionId, Subject subject, Schedule schedule, Room room, Instructor instructor) throws ScheduleConflictException {
+        if (!ValidationUtils.isAlphanumeric(sectionId)) {
+            throw new IllegalArgumentException("Section ID must be alphanumeric");
         }
         this.sectionId = sectionId;
-        this.schedule = schedule;
-        this.room = room;
+        this.subject = Objects.requireNonNull(subject);
+        this.schedule = Objects.requireNonNull(schedule);
+        this.room = Objects.requireNonNull(room);
+        this.instructor = Objects.requireNonNull(instructor);
         this.enrolledStudents = new HashSet<>();
+        
+        validateRoomScheduleConflict();
+        validateInstructorScheduleConflict();
     }
-    
-    public String getSectionId() {
-        return sectionId;
+
+    private void validateRoomScheduleConflict() throws ScheduleConflictException {
+        for (Section section : room.getAssignedSections()) {
+            if (section != this && section.hasScheduleConflict(this)) {
+                throw new ScheduleConflictException("Room " + room.getRoomName() + 
+                    " has schedule conflict between sections");
+            }
+        }
     }
-    
-    public Schedule getSchedule() {
-        return schedule;
+
+    private void validateInstructorScheduleConflict() throws ScheduleConflictException {
+        for (Section section : instructor.getAssignedSections()) {
+            if (section != this && section.hasScheduleConflict(this)) {
+                throw new ScheduleConflictException("Instructor " + instructor.getName() + 
+                    " has schedule conflict between sections");
+            }
+        }
     }
-    
-    public Room getRoom() {
-        return room;
-    }
-    
-    public boolean hasScheduleConflictWith(Section other) {
+
+    public boolean hasScheduleConflict(Section other) {
         return this.schedule.conflictsWith(other.schedule);
     }
-    
-    public boolean canAcceptMoreStudents() {
-        return enrolledStudents.size() < room.getCapacity();
+
+    public boolean isAtCapacity() {
+        return enrolledStudents.size() >= room.getCapacity();
     }
-    
-    public int getEnrolledCount() {
-        return enrolledStudents.size();
-    }
-    
-    public boolean isStudentEnrolled(Student student) {
-        return enrolledStudents.contains(student);
-    }
-    
-    void addStudent(Student student) {
+
+    void addStudent(Student student) throws EnlistmentException {
+        if (isAtCapacity()) {
+            throw new CapacityReachedException("Section is at full capacity");
+        }
         enrolledStudents.add(student);
     }
-    
+
     void removeStudent(Student student) {
         enrolledStudents.remove(student);
     }
-    
+
+    // Getters
+    public String getSectionId() { return sectionId; }
+    public Subject getSubject() { return subject; }
+    public Schedule getSchedule() { return schedule; }
+    public Room getRoom() { return room; }
+    public Instructor getInstructor() { return instructor; }
+    public Set<Student> getEnrolledStudents() { return new HashSet<>(enrolledStudents); }
+    public int getEnrollmentCount() { return enrolledStudents.size(); }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         Section section = (Section) obj;
-        return sectionId.equals(section.sectionId);
+        return Objects.equals(sectionId, section.sectionId);
     }
-    
+
     @Override
     public int hashCode() {
-        return sectionId.hashCode();
-    }
-    
-    @Override
-    public String toString() {
-        return "Section " + sectionId + " (" + schedule + ") in " + room;
+        return Objects.hash(sectionId);
     }
 }

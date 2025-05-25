@@ -1,69 +1,62 @@
 package com.orangeandbronze;
 
+import java.util.Objects;
+
 public class Schedule {
-    private final String days;
-    private final String period;
-    
-    public Schedule(String days, String period) {
-        if (days == null || period == null) {
-            throw new IllegalArgumentException("Days and period cannot be null");
-        }
-        validateDays(days);
-        validatePeriod(period);
-        this.days = days;
-        this.period = period;
+    public enum Days {
+        MTH, // Mon/Thu
+        TF,  // Tue/Fri
+        WS   // Wed/Sat
     }
-    
-    private void validateDays(String days) {
-        String[] validDays = {"Mon/Thu", "Tue/Fri", "Wed/Sat"};
-        for (String validDay : validDays) {
-            if (validDay.equals(days)) {
-                return;
-            }
+
+    public enum Period {
+        H0830_1000("8:30am-10am"),
+        H1000_1130("10am-11:30am"),
+        H1130_1300("11:30am-1pm"),
+        H1300_1430("1pm-2:30pm"),
+        H1430_1600("2:30pm-4pm"),
+        H1600_1730("4pm-5:30pm");
+
+        private final String timeRange;
+
+        Period(String timeRange) {
+            this.timeRange = timeRange;
         }
-        throw new IllegalArgumentException("Invalid days: " + days);
+
+        public String getTimeRange() { return timeRange; }
     }
-    
-    private void validatePeriod(String period) {
-        String[] validPeriods = {
-            "8:30am-10am", "10am-11:30am", "11:30am-1pm", 
-            "1pm-2:30pm", "2:30pm-4pm", "4pm-5:30pm"
-        };
-        for (String validPeriod : validPeriods) {
-            if (validPeriod.equals(period)) {
-                return;
-            }
-        }
-        throw new IllegalArgumentException("Invalid period: " + period);
+
+    private final Days days;
+    private final Period period;
+
+    public Schedule(Days days, Period period) {
+        this.days = Objects.requireNonNull(days);
+        this.period = Objects.requireNonNull(period);
     }
-    
+
     public boolean conflictsWith(Schedule other) {
-        return this.days.equals(other.days) && this.period.equals(other.period);
+        return this.days == other.days && this.period == other.period;
     }
-    
-    public String getDays() {
-        return days;
-    }
-    
-    public String getPeriod() {
-        return period;
-    }
-    
+
+    // Getters
+    public Days getDays() { return days; }
+    public Period getPeriod() { return period; }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         Schedule schedule = (Schedule) obj;
-        return days.equals(schedule.days) && period.equals(schedule.period);
+        return days == schedule.days && period == schedule.period;
     }
-    
+
     @Override
     public int hashCode() {
-        return days.hashCode() + period.hashCode();
+        return Objects.hash(days, period);
     }
-    
+
     @Override
     public String toString() {
-        return days + " " + period;
+        return days + " " + period.getTimeRange();
     }
 }
